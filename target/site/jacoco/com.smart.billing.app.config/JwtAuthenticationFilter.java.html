@@ -82,62 +82,68 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         final String jwt;
         final String userEmail;
 
-        // Validate that the header exists and begins with &quot;Bearer&quot;
-<span class="nc bnc" id="L86" title="All 4 branches missed.">        if (authHeader == null || !authHeader.startsWith(&quot;Bearer &quot;)) {</span>
+
+<span class="nc bnc" id="L86" title="All 2 branches missed.">        if(request.getRequestURI().contains(&quot;/api/v1/auth/&quot;)) {</span>
 <span class="nc" id="L87">            filterChain.doFilter(request, response);</span>
 <span class="nc" id="L88">            return;</span>
         }
 
+        // Validate that the header exists and begins with &quot;Bearer&quot;
+<span class="nc bnc" id="L92" title="All 4 branches missed.">        if (authHeader == null || !authHeader.startsWith(&quot;Bearer &quot;)) {</span>
+<span class="nc" id="L93">            filterChain.doFilter(request, response);</span>
+<span class="nc" id="L94">            return;</span>
+        }
+
         // Extract the token (position 7 onwards) and the user's email
-<span class="nc" id="L92">        jwt = authHeader.substring(7);</span>
+<span class="nc" id="L98">        jwt = authHeader.substring(7);</span>
 
         try {
 
-<span class="nc" id="L96">            userEmail = jwtService.extractEmail(jwt);</span>
+<span class="nc" id="L102">            userEmail = jwtService.extractEmail(jwt);</span>
 
             // Check if the user is not already authenticated in the security context
-<span class="nc bnc" id="L99" title="All 4 branches missed.">            if (userEmail != null &amp;&amp; SecurityContextHolder.getContext().getAuthentication() == null) {</span>
+<span class="nc bnc" id="L105" title="All 4 branches missed.">            if (userEmail != null &amp;&amp; SecurityContextHolder.getContext().getAuthentication() == null) {</span>
 
                 // Check if the token is valid (not expired and with a correct signature)
-<span class="nc bnc" id="L102" title="All 2 branches missed.">                if (jwtService.isTokenValid(jwt, userEmail)) {</span>
+<span class="nc bnc" id="L108" title="All 2 branches missed.">                if (jwtService.isTokenValid(jwt, userEmail)) {</span>
 
                     // Create the authentication object for Spring Security
                     // We're using an empty list of authorities for now (you can load roles here)
-<span class="nc" id="L106">                    UserDetails userDetails = new User(userEmail, &quot;&quot;, Collections.emptyList());</span>
+<span class="nc" id="L112">                    UserDetails userDetails = new User(userEmail, &quot;&quot;, Collections.emptyList());</span>
 
-<span class="nc" id="L108">                    UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(</span>
+<span class="nc" id="L114">                    UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(</span>
                             userDetails,
                             null,
-<span class="nc" id="L111">                            userDetails.getAuthorities()</span>
+<span class="nc" id="L117">                            userDetails.getAuthorities()</span>
                     );
 
                     // Enrich authentication with request details (IP, Session)
-<span class="nc" id="L115">                    authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));</span>
+<span class="nc" id="L121">                    authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));</span>
 
                     // Set the user as &quot;Authenticated&quot; in the system
-<span class="nc" id="L118">                    SecurityContextHolder.getContext().setAuthentication(authToken);</span>
+<span class="nc" id="L124">                    SecurityContextHolder.getContext().setAuthentication(authToken);</span>
                 }
             }
 
             // Continue to the next filter in the chain
-<span class="nc" id="L123">            filterChain.doFilter(request, response);</span>
+<span class="nc" id="L129">            filterChain.doFilter(request, response);</span>
 
-<span class="nc" id="L125">        } catch(ExpiredJwtException e) {</span>
+<span class="nc" id="L131">        } catch(ExpiredJwtException e) {</span>
             
-<span class="nc" id="L127">            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);</span>
-<span class="nc" id="L128">            response.setContentType(&quot;application/json&quot;);</span>
-<span class="nc" id="L129">            response.setCharacterEncoding(&quot;UTF-8&quot;);</span>
+<span class="nc" id="L133">            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);</span>
+<span class="nc" id="L134">            response.setContentType(&quot;application/json&quot;);</span>
+<span class="nc" id="L135">            response.setCharacterEncoding(&quot;UTF-8&quot;);</span>
 
-<span class="nc" id="L131">            String jsonResponse = String.format(&quot;{\&quot;error\&quot;: \&quot;Token expired\&quot;, \&quot;message\&quot;: \&quot;%s\&quot;}&quot;, </span>
-<span class="nc" id="L132">            request.getRequestURI());</span>
+<span class="nc" id="L137">            String jsonResponse = String.format(&quot;{\&quot;error\&quot;: \&quot;Token expired\&quot;, \&quot;message\&quot;: \&quot;%s\&quot;}&quot;, </span>
+<span class="nc" id="L138">            request.getRequestURI());</span>
 
-<span class="nc" id="L134">            response.getWriter().write(jsonResponse);</span>
-<span class="nc" id="L135">            return;</span>
+<span class="nc" id="L140">            response.getWriter().write(jsonResponse);</span>
+<span class="nc" id="L141">            return;</span>
 
-<span class="nc" id="L137">        }</span>
+<span class="nc" id="L143">        }</span>
 
 
-<span class="nc" id="L140">    }</span>
+<span class="nc" id="L146">    }</span>
 
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

@@ -20,7 +20,7 @@ GROUP,PACKAGE,CLASS,INSTRUCTION_MISSED,INSTRUCTION_COVERED,BRANCH_MISSED,BRANCH_
 ,com.smart.billing.app.dto,LoginRequestDTO,0,9,0,0,0,1,0,1,0,1
 ,com.smart.billing.app.dto,LoginResponseDTO,0,27,0,0,0,1,0,1,0,1
 ,com.smart.billing.app.dto,DashboardResponseDTO,0,15,0,0,0,1,0,1,0,1
-,com.smart.billing.app.config,JwtAuthenticationFilter,91,0,10,0,24,0,6,0,1,0
+,com.smart.billing.app.config,JwtAuthenticationFilter,101,0,12,0,27,0,7,0,1,0
 ,com.smart.billing.app.config,JwtService,108,3,4,0,26,1,10,1,8,1
 ,com.smart.billing.app.config,SecurityConfig,0,126,0,0,0,24,0,6,0,6
 ,com.smart.billing.app.config,ApplicationConfig,15,24,0,0,1,7,2,4,2,4

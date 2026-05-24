@@ -1,0 +1,38 @@
+{
+  "name": "Smart Billing IA - Spring Boot",
+  "dockerComposeFile": "../docker-compose.yml",
+  "service": "app",
+  "workspaceFolder": "/workspace",
+   "features": {
+    "ghcr.io/devcontainers/features/git:1": {}
+
+  },
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "vscjava.vscode-java-pack",
+        "vscjava.vscode-maven",
+        "vscjava.vscode-spring-boot-dashboard",
+        "vscjava.vscode-lombok",
+        "ms-azuretools.vscode-docker",
+        "eamodio.gitlens",
+        "sonarsource.sonarlint-vscode",
+        "redhat.vscode-yaml",
+        "mtxr.sqltools",
+        "mtxr.sqltools-driver-pg"
+      ]
+    }
+  },
+
+  "containerEnv": {
+    "DB_URL": "jdbc:postgresql://db:5432/smart_billing_db",
+    "DB_USERNAME": "developer",
+    "DB_PASSWORD": "devjava2026",
+    "PORT": "8181"
+  },
+
+  "forwardPorts": [8181, 5432],
+  
+  "postCreateCommand": "sudo apt update && apt install -y postgresql-client && mvn clean install -DskipTests"
+
+}
