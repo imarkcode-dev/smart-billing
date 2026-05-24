@@ -1,0 +1,210 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>CustomerService.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report"></a> &gt; <a href="index.source.html" class="el_package">com.smart.billing.app.service</a> &gt; <span class="el_source">CustomerService.java</span></div><h1>CustomerService.java</h1><pre class="source lang-java linenums">package com.smart.billing.app.service;
+
+import java.math.BigDecimal;
+import java.util.List;
+
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import com.smart.billing.app.domain.Customer;
+import com.smart.billing.app.dto.CustomerRequestDTO;
+import com.smart.billing.app.dto.CustomerResponseDTO;
+import com.smart.billing.app.exception.ResourceNotFoundException;
+import com.smart.billing.app.repository.CustomerRepository;
+
+import lombok.RequiredArgsConstructor;
+
+/**
+ * Service class for managing customer operations in the Smart Billing application.
+ *
+ * This service provides business logic for CRUD operations on customers, including
+ * validation, data transformation, and transaction management. It implements the
+ * ICustomerService interface and handles the conversion between domain entities
+ * and DTOs for the REST API layer.
+ *
+ * Key features:
+ * - Tax ID uniqueness validation during creation and updates
+ * - Automatic risk score initialization for new customers
+ * - Default &quot;ACTIVE&quot; status for new customers
+ * - Transactional operations for data consistency
+ * - Comprehensive error handling with meaningful messages
+ *
+ * @author Smart Billing Team
+ * @version 1.0
+ * @since 1.0
+ */
+@Service
+@RequiredArgsConstructor
+public class CustomerService implements ICustomerService {
+
+    private final CustomerRepository customerRepository;
+
+    /**
+     * Retrieves all customers from the database.
+     *
+     * @return List of CustomerResponseDTO containing all customers in the system
+     */
+    @Override
+    @Transactional(readOnly = true)
+    public List&lt;CustomerResponseDTO&gt; findAll() {
+<span class="fc" id="L50">        return customerRepository.findAll()</span>
+<span class="fc" id="L51">            .stream()</span>
+<span class="fc" id="L52">            .map(this::mapToResponse)</span>
+<span class="fc" id="L53">            .toList();</span>
+    }
+
+    /**
+     * Retrieves a specific customer by their unique identifier.
+     *
+     * @param id the unique identifier of the customer to retrieve
+     * @return CustomerResponseDTO containing the customer information
+     * @throws ResourceNotFoundException if no customer is found with the given ID
+     */
+    @Override
+    @Transactional(readOnly = true)
+    public CustomerResponseDTO findById(Integer id) {
+<span class="fc" id="L66">        return customerRepository.findById(id)</span>
+<span class="fc" id="L67">            .map(this::mapToResponse)</span>
+<span class="fc" id="L68">            .orElseThrow( () -&gt; new ResourceNotFoundException(&quot;Customer not found with id: &quot; + id) );</span>
+    }
+
+    /**
+     * Creates a new customer in the system.
+     *
+     * This method performs validation to ensure the tax ID is unique and sets
+     * default values for risk score (0.00) and status (&quot;ACTIVE&quot;).
+     *
+     * @param dto the CustomerRequestDTO containing the customer information to create
+     * @return CustomerResponseDTO containing the created customer information
+     * @throws ResourceNotFoundException if the request DTO is null or tax ID already exists
+     */
+    @Override
+    @Transactional
+    public CustomerResponseDTO create(CustomerRequestDTO dto) {
+
+<span class="fc bfc" id="L85" title="All 2 branches covered.">       if(dto == null) {</span>
+<span class="fc" id="L86">         throw new ResourceNotFoundException(&quot;CustomerRequestDTO cannot be null&quot;);</span>
+       }
+
+<span class="fc bfc" id="L89" title="All 2 branches covered.">       if (customerRepository.existsByTaxId(dto.taxId())) {</span>
+<span class="fc" id="L90">        throw new ResourceNotFoundException(&quot;The Tax ID &quot; + dto.taxId() + &quot; is already registered.&quot;);</span>
+       }
+
+<span class="fc" id="L93">        Customer customerEntity = Customer.builder()</span>
+<span class="fc" id="L94">                .taxId(dto.taxId())</span>
+<span class="fc" id="L95">                .nameCustomer(dto.nameCustomer())</span>
+<span class="fc" id="L96">                .email(dto.email())</span>
+<span class="fc" id="L97">                .phone(dto.phone())</span>
+<span class="fc" id="L98">                .riskScore(BigDecimal.ZERO)</span>
+<span class="fc" id="L99">                .status(&quot;ACTIVE&quot;)</span>
+<span class="fc" id="L100">                .build();</span>
+
+<span class="fc" id="L102">       Customer customerSaved = customerRepository.save(customerEntity);</span>
+
+<span class="fc" id="L104">       return mapToResponse(customerSaved);</span>
+
+
+    }
+
+    /**
+     * Updates an existing customer with new information.
+     *
+     * This method validates that the customer exists and ensures tax ID uniqueness
+     * if the tax ID is being changed. Only the tax ID, name, email, and phone can be updated.
+     *
+     * @param id the unique identifier of the customer to update
+     * @param dto the CustomerRequestDTO containing the updated customer information
+     * @return CustomerResponseDTO containing the updated customer information
+     * @throws ResourceNotFoundException if the customer is not found or tax ID is already used by another customer
+     */
+    @Override
+    @Transactional
+    public CustomerResponseDTO update(Integer id, CustomerRequestDTO dto) {
+
+<span class="fc" id="L124">        Customer customerEntity = customerRepository.findById(id)</span>
+<span class="fc" id="L125">            .orElseThrow(() -&gt; new ResourceNotFoundException(&quot;Customer not found with ID: &quot; + id));</span>
+
+<span class="fc bfc" id="L127" title="All 2 branches covered.">        if (!customerEntity.getTaxId().equals(dto.taxId())) {</span>
+<span class="fc bfc" id="L128" title="All 2 branches covered.">            if (customerRepository.existsByTaxId(dto.taxId())) {</span>
+<span class="fc" id="L129">                throw new ResourceNotFoundException(&quot;The Tax ID &quot; + dto.taxId() + &quot; is already used by another customer.&quot;);</span>
+            }
+<span class="fc" id="L131">            customerEntity.setTaxId(dto.taxId());</span>
+        }
+
+<span class="fc" id="L134">        customerEntity.setNameCustomer(dto.nameCustomer());</span>
+<span class="fc" id="L135">        customerEntity.setEmail(dto.email());</span>
+<span class="fc" id="L136">        customerEntity.setPhone(dto.phone());</span>
+
+<span class="fc" id="L138">        Customer customerUpdated = customerRepository.save(customerEntity);</span>
+
+<span class="fc" id="L140">        return mapToResponse(customerUpdated);</span>
+    }
+
+
+    /**
+     * Deletes a customer from the system by their unique identifier.
+     *
+     * @param id the unique identifier of the customer to delete
+     * @throws ResourceNotFoundException if no customer is found with the given ID
+     */
+    @Override
+    @Transactional
+    public void delete(Integer id) {
+
+<span class="fc bfc" id="L154" title="All 2 branches covered.">        if (!customerRepository.existsById(id)) {</span>
+<span class="fc" id="L155">            throw new ResourceNotFoundException(&quot;Customer not found with ID: &quot; + id);</span>
+        }
+<span class="fc" id="L157">        customerRepository.deleteById(id);</span>
+<span class="fc" id="L158">    }</span>
+
+    /**
+     * Maps a Customer entity to a CustomerResponseDTO.
+     *
+     * This private method is used internally to convert domain entities
+     * to response DTOs for the REST API layer.
+     *
+     * @param entity the Customer entity to map
+     * @return CustomerResponseDTO containing the mapped customer data
+     */
+    private CustomerResponseDTO mapToResponse(Customer entity) {
+<span class="fc" id="L170">        return new CustomerResponseDTO(</span>
+<span class="fc" id="L171">            entity.getId(),</span>
+<span class="fc" id="L172">            entity.getTaxId(),</span>
+<span class="fc" id="L173">            entity.getNameCustomer(),</span>
+<span class="fc" id="L174">            entity.getEmail(),</span>
+<span class="fc" id="L175">            entity.getPhone(),</span>
+<span class="fc" id="L176">            entity.getRiskScore(),</span>
+<span class="fc" id="L177">            entity.getStatus(),</span>
+<span class="fc" id="L178">            entity.getCreatedAt(),</span>
+<span class="fc" id="L179">            entity.getUpdatedAt()</span>
+        );
+    }
+
+    /**
+     * Maps a CustomerResponseDTO to a Customer entity.
+     *
+     * This private method is used internally to convert response DTOs
+     * back to domain entities when needed.
+     *
+     * @param dto the CustomerResponseDTO to map
+     * @return Customer entity containing the mapped customer data
+     */
+    private Customer mapToEntity(CustomerResponseDTO dto) {
+<span class="nc" id="L193">            Customer entity  = new Customer();</span>
+
+<span class="nc" id="L195">            entity.setId(dto.id());</span>
+<span class="nc" id="L196">            entity.setTaxId(dto.taxId());</span>
+<span class="nc" id="L197">            entity.setNameCustomer(dto.nameCustomer());</span>
+<span class="nc" id="L198">            entity.setEmail(dto.email());</span>
+<span class="nc" id="L199">            entity.setPhone(dto.phone());</span>
+<span class="nc" id="L200">            entity.setRiskScore(dto.riskScore());</span>
+<span class="nc" id="L201">            entity.setStatus(dto.status());</span>
+<span class="nc" id="L202">            entity.setCreatedAt(dto.createdAt());</span>
+<span class="nc" id="L203">            entity.setUpdatedAt(dto.updatedAt());</span>
+<span class="nc" id="L204">            return entity;</span>
+    }
+
+
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

@@ -1,0 +1,10 @@
+### Variables Globales
+@baseUrl = http://localhost:8181/api/v1/dashboard
+@contentType = application/json
+
+
+### Obtener el resumen financiero consolidado
+# Este endpoint calcula: Total Invoiced, Collected, Overdue y Cash Flow
+GET {{baseUrl}}/summary
+Accept: {{contentType}}
+

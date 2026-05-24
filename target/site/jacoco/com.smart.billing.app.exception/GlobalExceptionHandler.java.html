@@ -1,0 +1,137 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>GlobalExceptionHandler.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report"></a> &gt; <a href="index.source.html" class="el_package">com.smart.billing.app.exception</a> &gt; <span class="el_source">GlobalExceptionHandler.java</span></div><h1>GlobalExceptionHandler.java</h1><pre class="source lang-java linenums">package com.smart.billing.app.exception;
+
+import java.time.LocalDateTime;
+import java.util.Map;
+
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.web.bind.annotation.ControllerAdvice;
+import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
+
+import com.smart.billing.app.dto.ErrorResponse;
+
+/**
+ * Global exception handler for the Smart Billing application.
+ * 
+ * This class is responsible for handling exceptions thrown by controllers
+ * across the entire application. It uses Spring's @ControllerAdvice annotation
+ * to intercept exceptions and provide consistent error responses.
+ * 
+ * The handler provides specific treatment for:
+ * - ResourceNotFoundException: Returns HTTP 404 with error details
+ * - Generic Exception: Returns HTTP 400 with error details
+ * 
+ * All error responses are formatted using the ErrorResponse DTO containing
+ * timestamp, status code, and error message.
+ */
+@ControllerAdvice
+<span class="fc" id="L31">public class GlobalExceptionHandler {</span>
+
+    /**
+     * Handles ResourceNotFoundException and returns HTTP 404.
+     */
+   @ExceptionHandler(ResourceNotFoundException.class)
+    public ResponseEntity&lt;ErrorResponse&gt; handleNotFound(ResourceNotFoundException ex) {
+<span class="fc" id="L38">        return ResponseEntity.status(HttpStatus.NOT_FOUND)</span>
+<span class="fc" id="L39">                .body(new ErrorResponse(</span>
+<span class="fc" id="L40">                        LocalDateTime.now(),</span>
+<span class="fc" id="L41">                        HttpStatus.NOT_FOUND.value(),</span>
+<span class="fc" id="L42">                        ex.getMessage()</span>
+                ));
+    }
+
+    /**
+     * Handles generic exceptions and returns HTTP 400.
+     */
+     @ExceptionHandler(Exception.class)
+    public ResponseEntity&lt;ErrorResponse&gt; handleGeneric(Exception ex) {
+<span class="fc" id="L51">        return ResponseEntity.status(HttpStatus.BAD_REQUEST)</span>
+<span class="fc" id="L52">                .body(new ErrorResponse(</span>
+<span class="fc" id="L53">                        LocalDateTime.now(),</span>
+<span class="fc" id="L54">                        HttpStatus.BAD_REQUEST.value(),</span>
+<span class="fc" id="L55">                        ex.getMessage()</span>
+                ));
+    }
+
+    /**
+     * Handles BadCredentialsException and returns HTTP 401.
+     * This exception is thrown when invalid credentials (wrong password) are provided.
+     *
+     * @param ex the BadCredentialsException thrown
+     * @return ResponseEntity with HTTP 401 Unauthorized status and error message
+     */
+    @ExceptionHandler(BadCredentialsException.class)
+    public ResponseEntity&lt;String&gt; handleBadCredentials(BadCredentialsException ex) {
+<span class="fc" id="L68">        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(ex.getMessage());</span>
+    }
+
+    /**
+     * Handles RuntimeException and returns HTTP 500.
+     * This is a catch-all handler for unexpected runtime exceptions during execution.
+     *
+     * @param ex the RuntimeException thrown
+     * @return ResponseEntity with HTTP 500 Internal Server Error status and error message
+     */
+    @ExceptionHandler(RuntimeException.class)
+    public ResponseEntity&lt;String&gt; handleRuntimeException(RuntimeException ex) {
+<span class="fc" id="L80">        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(ex.getMessage());</span>
+    }
+
+    /**
+     * Handles HttpMessageNotReadableException and returns HTTP 400.
+     * This exception is thrown when the request body contains malformed or invalid JSON.
+     *
+     * @param ex the HttpMessageNotReadableException thrown
+     * @return ResponseEntity with HTTP 400 Bad Request status and error message
+     */
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ResponseEntity&lt;String&gt; handleInvalidJson(HttpMessageNotReadableException ex) {
+<span class="fc" id="L92">        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(&quot;Malformed JSON request&quot;);</span>
+    }
+
+    /**
+     * Handles MethodArgumentTypeMismatchException and returns HTTP 400.
+     *
+     * This exception is thrown when a request parameter or path variable
+     * cannot be converted to the expected type. For example, if the endpoint
+     * expects an Integer ID but receives a non-numeric string such as &quot;abc&quot;,
+     * Spring will raise this exception.
+     *
+     * @param ex the MethodArgumentTypeMismatchException thrown by Spring
+     *           when the argument type does not match the expected type
+     * @return ResponseEntity with HTTP 400 (Bad Request) status and a message
+     *         indicating the invalid parameter type along with the value received
+     */
+    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+    public ResponseEntity&lt;String&gt; handleTypeMismatch(MethodArgumentTypeMismatchException ex) {
+<span class="fc" id="L110">        return ResponseEntity.status(HttpStatus.BAD_REQUEST)</span>
+<span class="fc" id="L111">                .body(&quot;Invalid parameter type: &quot; + ex.getValue());</span>
+    }
+
+    /**
+     * Handles IllegalArgumentException thrown within the application.
+     * 
+     * This method intercepts any IllegalArgumentException raised by controllers
+     * and returns a standardized HTTP 400 (Bad Request) response. The response body
+     * contains a JSON object with a single key &quot;message&quot; that provides details
+     * about the error.
+     *
+     * Example response:
+     * {
+     *   &quot;message&quot;: &quot;Cliente no encontrado en el sistema&quot;
+     * }
+     *
+     * @param ex the IllegalArgumentException instance containing the error details
+     * @return a ResponseEntity with HTTP status 400 and a JSON body describing the error
+     */
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity&lt;Map&lt;String, String&gt;&gt; handleIllegalArgument(IllegalArgumentException ex) {
+<span class="fc" id="L132">        return ResponseEntity.badRequest().body(Map.of(&quot;message&quot;, ex.getMessage()));</span>
+    }
+
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

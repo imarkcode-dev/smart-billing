@@ -1,0 +1,56 @@
+### Global Variables
+
+@baseUrl = http://localhost:8181/api/v1/contract
+
+@contentType = application/json
+
+
+### Get all contracts
+GET {{baseUrl}}
+Content-Type: {{contentType}}
+
+### Get contract by ID
+GET {{baseUrl}}/1
+Content-Type: {{contentType}}
+
+### Create contract
+POST {{baseUrl}}
+Content-Type: {{contentType}}
+Accept: {{contentType}}
+
+{
+  "customerId": 3,
+  "title": "Service Contract 2",
+  "startDate": "2026-05-01",
+  "endDate": "2027-09-01",
+  "monthlyFee": 2700.00,
+  "currency": "USD",
+  "status": "ACTIVE"
+}
+
+### Update contract
+PUT {{baseUrl}}/3
+Content-Type: {{contentType}}
+Accept: {{contentType}}
+
+{
+  "customerId": 3,
+  "title": "Contrato actualizado",
+  "startDate": "2026-05-01",
+  "endDate": "2027-12-31",
+  "monthlyFee": 2000.00,
+  "currency": "USD",
+  "status": "ACTIVE"
+}
+
+### Delete contract
+DELETE {{baseUrl}}/3
+Accept: {{contentType}}
+
+### Get contracts by customer
+GET {{baseUrl}}/1
+Accept: {{contentType}}
+
+### Get contracts by status
+GET {{baseUrl}}/status/ACTIVE
+Accept: {{contentType}}

@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>LoginUser.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report"></a> &gt; <a href="index.source.html" class="el_package">com.smart.billing.app.domain</a> &gt; <span class="el_source">LoginUser.java</span></div><h1>LoginUser.java</h1><pre class="source lang-java linenums">package com.smart.billing.app.domain;
+
+import java.time.LocalDateTime;
+import java.util.Collection;
+import java.util.List;
+
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.userdetails.UserDetails;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.PrePersist;
+import jakarta.persistence.PreUpdate;
+import jakarta.persistence.Table;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+@Entity
+@Table(name = &quot;login_user&quot;)
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
+public class LoginUser implements UserDetails  {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Integer id;
+
+    @Column(unique = true, nullable = false)
+    private String email;
+
+    private String passwordHash;
+
+    @Column(name = &quot;user_name&quot;, nullable = false)
+    private String username;
+
+    @Column(name = &quot;last_name&quot;, nullable = false)
+    private String lastName;
+
+    @Builder.Default
+    @Column(name = &quot;auth_provider&quot;)
+    private String authProvider = &quot;local&quot;;
+
+    @Column(name = &quot;google_id&quot;)
+    private String googleId;
+
+    @Builder.Default
+    @Column(name = &quot;role_user&quot;)
+    private String roleUser = &quot;USER&quot;;
+
+    @Column(name = &quot;created_at&quot;)
+    private LocalDateTime createdAt;
+
+    @Column(name = &quot;updated_at&quot;)
+    private LocalDateTime updatedAt;
+
+    @Column(name = &quot;last_login&quot;)
+    private LocalDateTime lastLogin;
+
+    @PrePersist
+    protected void onCreate() { 
+<span class="nc" id="L69">        this.createdAt = LocalDateTime.now(); </span>
+<span class="nc" id="L70">        this.updatedAt = LocalDateTime.now();</span>
+<span class="nc" id="L71">    }</span>
+
+    @PreUpdate
+    protected void onUpdate() {
+<span class="nc" id="L75">         this.updatedAt = LocalDateTime.now();</span>
+<span class="nc" id="L76">    }</span>
+
+
+    // UserDetailsService
+    @Override
+    public String getUsername() {
+<span class="fc" id="L82">        return email; </span>
+    }
+
+    @Override
+    public String getPassword() {
+<span class="nc" id="L87">        return passwordHash; </span>
+    }
+
+    @Override
+    public Collection&lt;? extends GrantedAuthority&gt; getAuthorities() {
+<span class="nc" id="L92">        return List.of(new SimpleGrantedAuthority(roleUser));</span>
+    }
+
+    @Override
+<span class="nc" id="L96">    public boolean isAccountNonExpired() { return true; }</span>
+
+    @Override
+<span class="nc" id="L99">    public boolean isAccountNonLocked() { return true; }</span>
+
+    @Override
+<span class="nc" id="L102">    public boolean isCredentialsNonExpired() { return true; }</span>
+
+    @Override
+<span class="nc" id="L105">    public boolean isEnabled() { return true; }</span>
+
+   
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

@@ -1,0 +1,61 @@
+### Global Variables
+@baseUrl = http://localhost:8181/api/v1/invoice
+@contentType = application/json
+
+#@authToken = tu_token_jwt_aqui
+
+### 1. Get all invoices
+GET {{baseUrl}}
+#Authorization: Bearer {{authToken}}
+Content-Type: {{contentType}}
+
+###
+
+### 2. Get invoice by ID
+GET {{baseUrl}}/1
+#Authorization: Bearer {{authToken}}
+Content-Type: {{contentType}}
+
+###
+
+### 3. Create a new invoice
+# El totalAmount se heredará automáticamente del monthly_fee del contrato
+POST {{baseUrl}}
+#Authorization: Bearer {{authToken}}
+Content-Type: {{contentType}}
+
+
+{
+    "contractId": 1,
+    "invoiceNumber": "INV-2026-PO01",
+    "issueDate": "2026-05-01T10:30:00",
+    "dueDate": "2026-05-31T23:59:00",
+    "totalAmount": 9100.00,
+    "penaltyAmount": 0.0,
+    "status": "PENDING"
+
+}
+
+###
+
+### 4. Update an invoice (Revision)
+PUT {{baseUrl}}/11
+#Authorization: Bearer {{authToken}}
+Content-Type: {{contentType}}
+
+{
+    "contractId": 1,
+    "invoiceNumber": "INV-2026-P01-REV",
+    "issueDate": "2026-05-01T10:30:00",
+    "dueDate": "2026-05-31T23:59:00",
+    "totalAmount": 9200.00,
+    "penaltyAmount": 15.50,
+    "status": "PENDING"
+}
+
+###
+
+### 5. Delete an invoice
+DELETE {{baseUrl}}/11
+#Authorization: Bearer {{authToken}}
+Content-Type: {{contentType}}

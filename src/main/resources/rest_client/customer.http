@@ -1,0 +1,67 @@
+### Global Variables
+@baseUrl = http://localhost:8181/api/v1/customer
+
+@contentType = application/json
+
+@authToken = tu_token_jwt_aqui
+
+
+### 1. Get all customers
+GET {{baseUrl}}
+#Authorization: Bearer {{authToken}}
+Content-Type: {{contentType}}
+
+###
+
+### 2. Obtain a client by ID
+GET {{baseUrl}}/1
+#Authorization: Bearer {{authToken}}
+Content-Type: {{contentType}}
+
+###
+
+### 3. Create a new client
+POST {{baseUrl}}
+#Authorization: Bearer {{authToken}}
+Content-Type: {{contentType}}
+
+{
+    "taxId": "RFC993456789",
+    "nameCustomer": "SystemDev",
+    "email": "contacto@systemdev.com",
+    "phone": "7771234567"
+}
+
+###
+
+### 4. Attempt to create a client with incomplete data (@Valid Test)
+POST {{baseUrl}}
+#Authorization: Bearer {{authToken}}
+Content-Type: {{contentType}}
+
+{
+    "taxId": "",
+    "nameCustomer": "",
+    "email": "error@test.com"
+}
+
+###
+
+### 5. Update an existing client
+PUT {{baseUrl}}/2
+#Authorization: Bearer {{authToken}}
+Content-Type: {{contentType}}
+
+{
+    "taxId": "RFC993456789",
+    "nameCustomer": "Tecnologías Avanzadas S.A. de C.V.",
+    "email": "soport@techadv.com",
+    "phone": "4429876540"
+}
+
+###
+
+### 6. Delete a client
+DELETE {{baseUrl}}/2
+#Authorization: Bearer {{authToken}}
+Content-Type: {{contentType}}

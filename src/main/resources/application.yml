@@ -1,0 +1,78 @@
+spring:
+  application:
+    name: smart-billing
+
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://172.28.183.147:5432/smart_billing_db?ssl=false}
+    username: ${DB_USERNAME:developer}
+    password: ${DB_PASSWORD:devjava2026}
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+    generate-ddl: true
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        jdbc:
+          lob:
+            non_contextual_creation: true
+
+  jackson:
+    date-format: yyyy-MM-dd'T'HH:mm:ss
+    serialization:
+      write-dates-as-timestamps: false
+
+  ai:
+    vertex:
+      ai:
+        gemini:
+          project-id: ${GCP_PROJECT_ID:smartbilling-ia}
+          location: us-central1
+          transport-type: rest
+          credentials-location: file:/home/markcode/dev-copilot/conf/smartbilling-ia.json
+          retry:
+            max-attempts: 3
+            back-off:
+              initial-interval: 2000
+              max-interval: 5000
+          chat:
+            options:
+              model: gemini-2.5-flash
+              temperature: 0.2
+
+server:
+  port: ${PORT:8181}
+
+logging:
+  level:
+    org:
+      springframework:
+        web: DEBUG
+      hibernate:
+        SQL: DEBUG
+        orm:
+          jdbc:
+            bind: TRACE
+      springframework.ai: DEBUG
+    com:
+      google:
+        cloud:
+          vertexai: DEBUG
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-details: always
+
+application:
+  security:
+    jwt:
+      secret-key: 404E635266556A586E3272357538782F413F4428472B4B625064
+      expiration: 86400000

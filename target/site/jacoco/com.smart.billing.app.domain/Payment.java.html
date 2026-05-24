@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Payment.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report"></a> &gt; <a href="index.source.html" class="el_package">com.smart.billing.app.domain</a> &gt; <span class="el_source">Payment.java</span></div><h1>Payment.java</h1><pre class="source lang-java linenums">package com.smart.billing.app.domain;
+
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+
+import org.hibernate.annotations.CreationTimestamp;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.PrePersist;
+import jakarta.persistence.PreUpdate;
+import jakarta.persistence.Table;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+@Entity
+@Table(name = &quot;payment&quot;)
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
+public class Payment {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Integer id;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = &quot;invoice_id&quot;, nullable = false)
+    private Invoice invoice;
+
+    @CreationTimestamp
+    @Column(name = &quot;payment_date&quot;, updatable = false)
+    private LocalDateTime paymentDate;
+
+    @Column(name = &quot;amount_paid&quot;, nullable = false, precision = 15, scale = 2)
+    private BigDecimal amountPaid;
+
+    @Column(name = &quot;payment_method&quot;)
+    private String paymentMethod;
+
+    @Column(name = &quot;reference_number&quot;)
+    private String referenceNumber;
+
+    @Column(name = &quot;created_at&quot;, updatable = false)
+    private LocalDateTime createdAt;
+
+    @Column(name = &quot;updatedAt&quot;, updatable = false)
+    private LocalDateTime updatedAt;
+    
+    @PrePersist
+    protected void onCreate() { 
+<span class="nc" id="L61">        this.createdAt = LocalDateTime.now(); </span>
+<span class="nc" id="L62">        this.updatedAt = LocalDateTime.now();</span>
+<span class="nc" id="L63">    }</span>
+
+    @PreUpdate
+    protected void onUpdate() {
+<span class="nc" id="L67">         this.updatedAt = LocalDateTime.now();</span>
+<span class="nc" id="L68">    }</span>
+
+
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

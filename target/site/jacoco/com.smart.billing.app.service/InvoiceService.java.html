@@ -1,0 +1,177 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>InvoiceService.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report"></a> &gt; <a href="index.source.html" class="el_package">com.smart.billing.app.service</a> &gt; <span class="el_source">InvoiceService.java</span></div><h1>InvoiceService.java</h1><pre class="source lang-java linenums">package com.smart.billing.app.service;
+
+import java.math.BigDecimal;
+import java.util.List;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import com.smart.billing.app.domain.Contract;
+import com.smart.billing.app.domain.Invoice;
+import com.smart.billing.app.dto.InvoiceRequestDTO;
+import com.smart.billing.app.dto.InvoiceResponseDTO;
+import com.smart.billing.app.exception.ResourceNotFoundException;
+import com.smart.billing.app.repository.ContractRepository;
+import com.smart.billing.app.repository.InvoiceRepository;
+
+import lombok.RequiredArgsConstructor;
+
+/**
+ * Service implementation for managing billing invoices.
+ * Handles business logic for creating, updating, and retrieving invoice records,
+ * ensuring synchronization with contract financial data.
+ */
+@Service
+@RequiredArgsConstructor
+public class InvoiceService implements IInvoiceService {
+
+<span class="fc" id="L31">     private static final Logger LOG = LoggerFactory.getLogger(InvoiceService.class);</span>
+
+    private final InvoiceRepository invoiceRepository;
+    private final ContractRepository contractRepository;
+
+    /**
+     * Retrieves all invoices from the database.
+     *
+     * @return A list of {@link InvoiceResponseDTO} representing all invoices.
+     */
+    @Override
+    @Transactional(readOnly = true)
+    public List&lt;InvoiceResponseDTO&gt; findAll() {
+<span class="fc" id="L44">        return invoiceRepository.findAll().stream()</span>
+<span class="fc" id="L45">                .map(this::mapToResponse)</span>
+<span class="fc" id="L46">                .toList();</span>
+    }
+
+    /**
+     * Finds a specific invoice by its unique identifier.
+     *
+     * @param id The ID of the invoice to retrieve.
+     * @return The found {@link InvoiceResponseDTO}.
+     * @throws ResourceNotFoundException if no invoice is found with the given ID.
+     */
+    @Override
+    @Transactional(readOnly = true)
+    public InvoiceResponseDTO findById(Integer id) {
+<span class="fc" id="L59">        return invoiceRepository.findById(id)</span>
+<span class="fc" id="L60">            .map(this::mapToResponse)</span>
+<span class="fc" id="L61">            .orElseThrow(() -&gt; new ResourceNotFoundException(&quot;Invoice not found with id: &quot; + id));</span>
+    }
+
+    /**
+     * Creates a new invoice based on contract information.
+     * Validates contract existence and ensures the invoice number is unique.
+     * The total amount is automatically synchronized with the contract's monthly fee.
+     *
+     * @param dto The data transfer object containing invoice details.
+     * @return The created {@link InvoiceResponseDTO}.
+     * @throws ResourceNotFoundException if the associated contract does not exist.
+     * @throws ResourceNotFoundException  if the invoice number is already registered.
+     */
+    @Override
+    @Transactional
+    public InvoiceResponseDTO create(InvoiceRequestDTO dto) {
+<span class="fc" id="L77">        LOG.debug(&quot;InvoiceService:: create&quot;);</span>
+<span class="fc" id="L78">        Contract contract = contractRepository.findById(dto.contractId())</span>
+<span class="fc" id="L79">                .orElseThrow(() -&gt; new ResourceNotFoundException(&quot;Contract not found with ID: &quot; + dto.contractId()));</span>
+
+<span class="fc bfc" id="L81" title="All 2 branches covered.">        if (invoiceRepository.existsByInvoiceNumber(dto.invoiceNumber())) {</span>
+<span class="fc" id="L82">            throw new ResourceNotFoundException (&quot;Invoice number &quot; + dto.invoiceNumber() + &quot; already exists.&quot;);</span>
+        }
+
+<span class="fc" id="L85">        Invoice invoice = Invoice.builder()</span>
+<span class="fc" id="L86">                .contract(contract)</span>
+<span class="fc" id="L87">                .invoiceNumber(dto.invoiceNumber())</span>
+<span class="fc" id="L88">                .issueDate(dto.issueDate())</span>
+<span class="fc" id="L89">                .dueDate(dto.dueDate())</span>
+<span class="pc bpc" id="L90" title="1 of 2 branches missed.">                .totalAmount(dto.totalAmount() != null ? dto.totalAmount() : BigDecimal.ZERO) </span>
+<span class="pc bpc" id="L91" title="1 of 2 branches missed.">                .penaltyAmount(dto.penaltyAmount() != null ? dto.penaltyAmount() : BigDecimal.ZERO)</span>
+<span class="pc bpc" id="L92" title="1 of 2 branches missed.">                .status( dto.status() != null ? dto.status() : &quot;PENDING&quot;)</span>
+<span class="fc" id="L93">                .build();</span>
+
+<span class="fc" id="L95">        return mapToResponse(invoiceRepository.save(invoice));</span>
+    }
+
+    /**
+     * Updates an existing invoice. 
+     * If the contract is changed, the total amount is recalculated based on the new contract fee.
+     * Validates that the new invoice number is not in use by other records.
+     *
+     * @param id The ID of the invoice to update.
+     * @param dto The updated data.
+     * @return The updated {@link InvoiceResponseDTO}.
+     * @throws ResourceNotFoundException if the invoice or new contract is not found.
+     */
+    @Override
+    @Transactional
+    public InvoiceResponseDTO update(Integer id, InvoiceRequestDTO dto) {
+<span class="fc" id="L111">        LOG.debug(&quot;InvoiceService:: udpdate&quot;);</span>
+<span class="fc" id="L112">        Invoice invoice = invoiceRepository.findById(id)</span>
+<span class="fc" id="L113">                .orElseThrow(() -&gt; new ResourceNotFoundException(&quot;Invoice not found with ID: &quot; + id));</span>
+
+        // Note: Using contract search to ensure business rules across relationships
+<span class="fc" id="L116">        Contract currentContract = contractRepository.findById(dto.contractId())</span>
+<span class="fc" id="L117">            .orElseThrow(() -&gt; new ResourceNotFoundException(&quot;Contract not found&quot;));</span>
+
+        // Update contract and fee if a different contract is provided
+<span class="pc bpc" id="L120" title="1 of 2 branches missed.">        if (!invoice.getContract().getId().equals(dto.contractId())) {</span>
+<span class="nc" id="L121">            invoice.setContract(currentContract);</span>
+        }
+
+        // Validate invoice number uniqueness upon change
+<span class="fc bfc" id="L125" title="All 2 branches covered.">        if (!invoice.getInvoiceNumber().equals(dto.invoiceNumber())) {</span>
+<span class="fc bfc" id="L126" title="All 2 branches covered.">            if (invoiceRepository.existsByInvoiceNumber(dto.invoiceNumber())) {</span>
+<span class="fc" id="L127">                throw new ResourceNotFoundException(&quot;Invoice number &quot; + dto.invoiceNumber() + &quot; is already in use.&quot;);</span>
+            }
+<span class="fc" id="L129">            invoice.setInvoiceNumber(dto.invoiceNumber());</span>
+        }
+
+<span class="fc" id="L132">        invoice.setIssueDate(dto.issueDate());</span>
+<span class="fc" id="L133">        invoice.setDueDate(dto.dueDate());</span>
+<span class="pc bpc" id="L134" title="1 of 2 branches missed.">        invoice.setTotalAmount(dto.totalAmount() != null ? dto.totalAmount() : BigDecimal.ZERO); </span>
+<span class="pc bpc" id="L135" title="1 of 2 branches missed.">        invoice.setPenaltyAmount(dto.penaltyAmount() != null ? dto.penaltyAmount() : BigDecimal.ZERO);</span>
+<span class="pc bpc" id="L136" title="1 of 2 branches missed.">        invoice.setStatus(dto.status() != null ? dto.status() : &quot;PENDING&quot;);</span>
+
+<span class="fc" id="L138">        Invoice invoiceUpdated = invoiceRepository.save(invoice);</span>
+<span class="fc" id="L139">        return mapToResponse(invoiceUpdated);</span>
+    }
+
+    /**
+     * Deletes an invoice record by ID.
+     *
+     * @param id The ID of the invoice to remove.
+     * @throws ResourceNotFoundException if the invoice does not exist.
+     */
+    @Override
+    @Transactional
+    public void delete(Integer id) {
+<span class="fc bfc" id="L151" title="All 2 branches covered.">        if (!invoiceRepository.existsById(id)) {</span>
+<span class="fc" id="L152">            throw new ResourceNotFoundException(&quot;Invoice not found with ID: &quot; + id);</span>
+        }
+<span class="fc" id="L154">        invoiceRepository.deleteById(id);</span>
+<span class="fc" id="L155">    }</span>
+
+    /**
+     * Internal mapper to convert an Invoice entity to a Response DTO.
+     *
+     * @param entity The source {@link Invoice} entity.
+     * @return A {@link InvoiceResponseDTO} containing flattened data for the API.
+     */
+    private InvoiceResponseDTO mapToResponse(Invoice entity) {
+<span class="fc" id="L164">        return new InvoiceResponseDTO(</span>
+<span class="fc" id="L165">                entity.getId(),</span>
+<span class="fc" id="L166">                entity.getContract().getId(),</span>
+<span class="fc" id="L167">                entity.getInvoiceNumber(),</span>
+<span class="fc" id="L168">                entity.getContract().getCustomer().getNameCustomer(),</span>
+<span class="fc" id="L169">                entity.getIssueDate(),</span>
+<span class="fc" id="L170">                entity.getDueDate(),</span>
+<span class="fc" id="L171">                entity.getTotalAmount(),</span>
+<span class="fc" id="L172">                entity.getPenaltyAmount(),</span>
+<span class="fc" id="L173">                entity.getStatus()</span>
+        );
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

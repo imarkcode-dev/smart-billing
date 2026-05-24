@@ -1,0 +1,19 @@
+### Global Variables
+@baseUrl = http://localhost:8181/api/v1/ia
+@contentType = application/json
+
+### Predict Customer Risk
+GET {{baseUrl}}/predict-risk/101
+Content-Type: {{contentType}}
+
+### Get Collection Strategy
+GET {{baseUrl}}/collection-strategy/202
+Content-Type: {{contentType}}
+
+### Generate Custom Reminder
+GET {{baseUrl}}/generate-reminder/202
+Content-Type: {{contentType}}
+
+### Weekly Executive Summary
+GET {{baseUrl}}/weekly-summary
+Content-Type: {{contentType}}

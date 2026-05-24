@@ -1,0 +1,164 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>AiService.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report"></a> &gt; <a href="index.source.html" class="el_package">com.smart.billing.app.service</a> &gt; <span class="el_source">AiService.java</span></div><h1>AiService.java</h1><pre class="source lang-java linenums">package com.smart.billing.app.service;
+
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+
+import org.springframework.ai.chat.client.ChatClient;
+import org.springframework.stereotype.Service;
+
+import com.smart.billing.app.dto.AiDTO.CollectionStrategyResponse;
+import com.smart.billing.app.dto.AiDTO.CustomizedReminderResponse;
+import com.smart.billing.app.dto.AiDTO.ExecutiveSummaryResponse;
+import com.smart.billing.app.dto.AiDTO.RiskPredictionResponse;
+import com.smart.billing.app.repository.CustomerRepository;
+import com.smart.billing.app.repository.InvoiceRepository;
+
+
+	@Service
+	public class AiService implements IAiService {
+
+		private final ChatClient chatClient;
+		private final CustomerRepository customerRepository;
+		private final InvoiceRepository invoiceRepository;
+        
+
+		public AiService(ChatClient.Builder chatClientBuilder, 
+						 CustomerRepository customerRepository, 
+<span class="fc" id="L29">						 InvoiceRepository invoiceRepository ) {</span>
+<span class="fc" id="L30">			this.chatClient = chatClientBuilder.build();</span>
+<span class="fc" id="L31">			this.customerRepository = customerRepository;</span>
+<span class="fc" id="L32">			this.invoiceRepository = invoiceRepository;</span>
+
+<span class="fc" id="L34">			System.out.println(&quot;Ruta Credenciales: &quot; + System.getenv(&quot;GOOGLE_APPLICATION_CREDENTIALS&quot;));</span>
+<span class="fc" id="L35">		}</span>
+
+		/**
+		* Predicts the financial risk of a customer.
+		*
+		* Retrieves the customer's financial history from the repository and builds
+		* a contextual prompt for the AI model. The AI evaluates the metrics and
+		* returns a risk prediction including score, level, and justification.
+		*
+		* @param customerId the unique identifier of the customer
+		* @return RiskPredictionResponse containing tax ID, risk score, risk level, and justification
+		* @throws IllegalArgumentException if the customer is not found in the repository
+		*/
+		public RiskPredictionResponse predictCustomerRisk(Integer customerId) {
+<span class="fc" id="L49">			Map&lt;String, Object&gt; context = customerRepository.findCustomerFinancialHistory(customerId)</span>
+<span class="fc" id="L50">					.orElseThrow(() -&gt; new IllegalArgumentException(&quot;Cliente no encontrado en el sistema&quot;));</span>
+
+<span class="fc" id="L52">			String userPrompt = &quot;&quot;&quot;</span>
+				Analyze the following customer financial metrics map. Calculate their predictive default score.
+				Customer Metrics: %s
+<span class="fc" id="L55">				&quot;&quot;&quot;.formatted(context.toString());</span>
+
+<span class="fc" id="L57">			return this.chatClient.prompt()</span>
+<span class="fc" id="L58">					.system(&quot;You are a predictive analytics agent for SmartBilling AI. You assess risks from 0.0 to 100.0.&quot;)</span>
+<span class="fc" id="L59">					.user(userPrompt)</span>
+<span class="fc" id="L60">					.call()</span>
+<span class="fc" id="L61">					.entity(RiskPredictionResponse.class); </span>
+		}
+       
+
+
+		/**
+		 * Recommends a collection strategy for a specific invoice.
+		 *
+		 * Retrieves invoice and customer context from the repository and constructs
+		 * a prompt for the AI model. The AI suggests a tactical collection action
+		 * such as EMAIL_REMINDER, PAYMENT_PLAN, or EXTERNAL_COLLECTION, along with
+		 * reasoning and priority level.
+		 *
+		 * @param invoiceId the unique identifier of the invoice
+		 * @return CollectionStrategyResponse containing recommended action, priority, and tactical reasoning
+		 * @throws IllegalArgumentException if the invoice is not found in the repository
+		*/
+		public CollectionStrategyResponse getCollectionStrategy(Integer invoiceId) {
+<span class="fc" id="L79">			Map&lt;String, Object&gt; context = invoiceRepository.findInvoiceWithCustomerContext(invoiceId)</span>
+<span class="pc" id="L80">					.orElseThrow(() -&gt; new IllegalArgumentException(&quot;Invoice not found in the system&quot;));</span>
+
+<span class="fc" id="L82">			String userPrompt = &quot;&quot;&quot;</span>
+				Analyze the following invoice and its customer context to suggest a tactical collection action.
+				Structural data: %s
+<span class="fc" id="L85">				&quot;&quot;&quot;.formatted(context.toString());</span>
+
+<span class="fc" id="L87">			return this.chatClient.prompt()</span>
+<span class="fc" id="L88">					.system(&quot;Determine if it applies: EMAIL_REMINDER (low debt/low risk), PAYMENT_PLAN (high debt/medium risk), or EXTERNAL_COLLECTION (high risk/prolonged overdue).&quot;)</span>
+<span class="fc" id="L89">					.user(userPrompt)</span>
+<span class="fc" id="L90">					.call()</span>
+<span class="fc" id="L91">					.entity(CollectionStrategyResponse.class);</span>
+		}
+
+		/**
+		* Generates a customized reminder message for a given invoice.
+		*
+		* Retrieves invoice and customer context from the repository and builds
+		* a prompt for the AI model. The AI produces personalized communication
+		* templates (email subject, email body, SMS body) tailored to the customer's
+		* risk profile and invoice status.
+		*
+		* @param invoiceId the unique identifier of the invoice
+		* @return CustomizedReminderResponse containing email subject, email body, and SMS body
+		* @throws IllegalArgumentException if the invoice is not found in the repository
+		*/
+		public CustomizedReminderResponse generateCustomReminder(Integer invoiceId) {
+<span class="fc" id="L107">			Map&lt;String, Object&gt; context = invoiceRepository.findInvoiceWithCustomerContext(invoiceId)</span>
+<span class="pc" id="L108">					.orElseThrow(() -&gt; new IllegalArgumentException(&quot;Factura no encontrada para procesar notificación&quot;));</span>
+
+<span class="fc" id="L110">			String userPrompt = &quot;&quot;&quot;</span>
+			   Generate a customized collection template tailored to the profile.
+			   If the score is high, be strict and corporate; if it's low, be collaborative.
+			   Base information: %s
+<span class="fc" id="L114">			&quot;&quot;&quot;.formatted(context.toString());</span>
+
+<span class="fc" id="L116">			return this.chatClient.prompt()</span>
+<span class="fc" id="L117">					.system(&quot;Generates the requested text bodies. Replaces generic variables with the actual data provided.&quot;)</span>
+<span class="fc" id="L118">					.user(userPrompt)</span>
+<span class="fc" id="L119">					.call()</span>
+<span class="fc" id="L120">					.entity(CustomizedReminderResponse.class);</span>
+		}
+
+		/**
+		 * Produces an executive summary report of weekly billing performance.
+		 *
+		 * Retrieves weekly performance metrics from the repository and builds
+		 * a prompt for the AI model. The AI generates a concise analytical report
+		 * for management, highlighting summary text, high-risk customers, and
+		 * critical alerts. The method also parses raw customer strings into a list.
+		 *
+		 * @return ExecutiveSummaryResponse containing summary text, list of high-risk customers, and critical alerts
+		*/  
+		public ExecutiveSummaryResponse generateWeeklySummary() {
+<span class="fc" id="L134">			Map&lt;String, Object&gt; metrics = invoiceRepository.getWeeklyPerformanceMetrics();</span>
+
+<span class="fc" id="L136">			String rawCustomers = (String) metrics.get(&quot;highRiskCustomersRaw&quot;);</span>
+<span class="pc bpc" id="L137" title="2 of 4 branches missed.">			List&lt;String&gt; customerList = (rawCustomers != null &amp;&amp; !rawCustomers.isBlank()) </span>
+<span class="fc" id="L138">					? Arrays.asList(rawCustomers.split(&quot;,\\s*&quot;)) </span>
+<span class="pc" id="L139">					: Collections.emptyList();</span>
+
+<span class="fc" id="L141">			String userPrompt = &quot;&quot;&quot;</span>
+				Write a corporate summary in natural language based on these operational results from the week:
+				Metrics recovered: %s
+<span class="fc" id="L144">				&quot;&quot;&quot;.formatted(metrics.toString());</span>
+
+<span class="fc" id="L146">			ExecutiveSummaryResponse aiResponse = this.chatClient.prompt()</span>
+<span class="fc" id="L147">					.system(&quot;Generate an analytical report for the CFO. It should be concise, clear, and have a high business impact.&quot;)</span>
+<span class="fc" id="L148">					.user(userPrompt)</span>
+<span class="fc" id="L149">					.call()</span>
+<span class="fc" id="L150">					.entity(ExecutiveSummaryResponse.class);</span>
+
+<span class="fc" id="L152">			return new ExecutiveSummaryResponse(</span>
+<span class="fc" id="L153">					aiResponse.summaryText(),</span>
+					customerList,
+<span class="fc" id="L155">					aiResponse.criticalAlerts()</span>
+			);
+		}
+
+
+
+
+
+	}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

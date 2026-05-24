@@ -1,0 +1,148 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>AuthService.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report"></a> &gt; <a href="index.source.html" class="el_package">com.smart.billing.app.service</a> &gt; <span class="el_source">AuthService.java</span></div><h1>AuthService.java</h1><pre class="source lang-java linenums">package com.smart.billing.app.service;
+
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Service;
+
+import com.smart.billing.app.config.JwtService;
+import com.smart.billing.app.domain.LoginUser;
+import com.smart.billing.app.dto.LoginRequestDTO;
+import com.smart.billing.app.dto.LoginResponseDTO;
+import com.smart.billing.app.dto.RegisterRequestDTO;
+import com.smart.billing.app.exception.ResourceNotFoundException;
+import com.smart.billing.app.repository.AuthRepository;
+
+import jakarta.transaction.Transactional;
+import lombok.RequiredArgsConstructor;
+
+/**
+ * Service class for handling authentication and user registration operations.
+ *
+ * This service provides business logic for user authentication, registration,
+ * and JWT token generation. It implements the IAuthService interface and handles
+ * password encoding, user validation, and secure token creation.
+ *
+ * Key features:
+ * - User authentication with email/password validation
+ * - Secure password hashing using BCrypt
+ * - JWT token generation for authenticated sessions
+ * - User registration with email uniqueness validation
+ * - Automatic role and provider assignment with defaults
+ * - Last login timestamp tracking
+ * - Transactional operations for data consistency
+ *
+ * @author Smart Billing Team
+ * @version 1.0
+ * @since 1.0
+ */
+@Service
+@RequiredArgsConstructor
+public class AuthService implements IAuthService {
+
+    private final AuthRepository authRepository;
+    private final PasswordEncoder passwordEncoder;
+    private final JwtService jwtService;
+
+    /**
+     * Authenticates a user with email and password credentials.
+     *
+     * This method validates the user's existence, verifies the password against
+     * the stored hash, updates the last login timestamp, and generates a JWT token.
+     * All operations are performed within a transaction for data consistency.
+     *
+     * @param request the LoginRequestDTO containing email and password for authentication
+     * @return LoginResponseDTO containing user information and JWT token
+     * @throws ResourceNotFoundException if no user is found with the given email
+     * @throws BadCredentialsException if the password does not match the stored hash
+     */
+    @Transactional
+    public LoginResponseDTO login(LoginRequestDTO request) {
+<span class="fc" id="L62">        LoginUser user = authRepository.findByEmail(request.email())</span>
+<span class="fc" id="L63">                .orElseThrow(() -&gt; new ResourceNotFoundException(&quot;User not found.&quot;));</span>
+
+<span class="fc bfc" id="L65" title="All 2 branches covered.">        if (!passwordEncoder.matches(request.password(), user.getPasswordHash())) {</span>
+<span class="fc" id="L66">            throw new org.springframework.security.authentication.BadCredentialsException(&quot;Invalid credentials.&quot;);</span>
+        }
+
+<span class="fc" id="L69">        user.setLastLogin(LocalDateTime.now());</span>
+<span class="fc" id="L70">        authRepository.save(user);</span>
+
+<span class="fc" id="L72">        return generateLoginResponse(user);</span>
+    }
+
+    /**
+     * Registers a new user in the system.
+     *
+     * This method validates that the email is not already registered, creates a new
+     * user entity with encrypted password, sets default values for auth provider
+     * (&quot;LOCAL&quot;) and role (&quot;ROLE_USER&quot;) if not provided, and generates a JWT token
+     * for immediate authentication after registration.
+     *
+     * @param request the RegisterRequestDTO containing user registration information
+     * @return LoginResponseDTO containing the registered user information and JWT token
+     * @throws RuntimeException if the email address is already registered
+     */
+    @Override
+    @Transactional
+    public LoginResponseDTO register(RegisterRequestDTO request) {
+<span class="fc bfc" id="L90" title="All 2 branches covered.">        if (authRepository.findByEmail(request.email()).isPresent()) {</span>
+<span class="fc" id="L91">            throw new RuntimeException(&quot;The email address is already registered.&quot;);</span>
+        }
+
+<span class="fc" id="L94">        LoginUser newUser = new LoginUser();</span>
+<span class="fc" id="L95">        newUser.setEmail(request.email());</span>
+<span class="fc" id="L96">        newUser.setPasswordHash(passwordEncoder.encode(request.password()));</span>
+<span class="fc" id="L97">        newUser.setUsername(request.userName());</span>
+<span class="fc" id="L98">        newUser.setLastName(request.lastName());</span>
+<span class="pc bpc" id="L99" title="1 of 2 branches missed.">        newUser.setAuthProvider(request.authProvider() != null ? request.authProvider() : &quot;LOCAL&quot;);</span>
+<span class="pc bpc" id="L100" title="1 of 2 branches missed.">        newUser.setRoleUser(request.roleUser() != null ? request.roleUser() : &quot;ROLE_USER&quot;);</span>
+<span class="fc" id="L101">        newUser.setLastLogin(LocalDateTime.now());</span>
+
+<span class="fc" id="L103">        LoginUser savedUser = authRepository.save(newUser);</span>
+
+<span class="fc" id="L105">        return generateLoginResponse(savedUser);</span>
+    }
+
+    /**
+     * Generates a login response DTO with JWT token for a given user.
+     *
+     * This private method creates a LoginResponseDTO from a LoginUser entity,
+     * formats the last login timestamp, and generates a JWT token using the
+     * JwtService. The token is included in the final response.
+     *
+     * @param user the LoginUser entity to generate response for
+     * @return LoginResponseDTO containing user information and JWT token
+     */
+    private LoginResponseDTO generateLoginResponse(LoginUser user) {
+<span class="fc" id="L119">        String lastLoginStr = user.getLastLogin().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME);</span>
+
+<span class="fc" id="L121">        LoginResponseDTO response = new LoginResponseDTO(</span>
+<span class="fc" id="L122">                user.getId(),</span>
+<span class="fc" id="L123">                user.getEmail(),</span>
+<span class="fc" id="L124">                user.getUsername(),</span>
+<span class="fc" id="L125">                user.getLastName(),</span>
+<span class="fc" id="L126">                user.getAuthProvider(),</span>
+<span class="fc" id="L127">                user.getRoleUser(),</span>
+                lastLoginStr,
+                null
+        );
+
+<span class="fc" id="L132">        String token = jwtService.generateToken(response);</span>
+
+<span class="fc" id="L134">        return new LoginResponseDTO(</span>
+<span class="fc" id="L135">                response.id(),</span>
+<span class="fc" id="L136">                response.email(),</span>
+<span class="fc" id="L137">                response.username(),</span>
+<span class="fc" id="L138">                response.lastName(),</span>
+<span class="fc" id="L139">                response.authProvider(),</span>
+<span class="fc" id="L140">                response.roleUser(),</span>
+<span class="fc" id="L141">                response.lastLogin(),</span>
+                token
+        );
+    }
+
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>
