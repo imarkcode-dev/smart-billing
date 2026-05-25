@@ -3,6 +3,9 @@
   "dockerComposeFile": "../docker-compose.yml",
   "service": "app",
   "workspaceFolder": "/workspace",
+  
+  "initializeCommand": "echo \"$GOOGLE_APPLICATION_CREDENTIALS\" > /tmp/google-credentials.json",
+
    "features": {
     "ghcr.io/devcontainers/features/git:1": {}
 
