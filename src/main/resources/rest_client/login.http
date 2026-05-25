@@ -1,7 +1,7 @@
 ### Variable Configuration
-@baseUrl = http://localhost:8181/api/v1/auth
-
 //@baseUrl = http://localhost:8181/api/v1/auth
+
+@baseUrl = https://reimagined-bassoon-q7w7q7v9q95634vwr-8181.app.github.dev/api/v1/auth
 
 @contentType = application/json
 

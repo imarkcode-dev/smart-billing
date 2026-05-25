@@ -30,13 +30,13 @@
     "DB_USERNAME": "developer",
     "DB_PASSWORD": "devjava2026",
     "PORT": "8181",
-    "GOOGLE_APPLICATION_CREDENTIALS": "/tmp/google-credentials.json"
+    "GOOGLE_APPLICATION_CREDENTIALS": "/workspace/conf/google-credentials.json"
   },
 
   "forwardPorts": [8181, 5432],
   
   "postCreateCommand": "sudo apt update && apt install -y postgresql-client && mvn clean install -DskipTests",
 
-  "postStartCommand": "echo \"$GOOGLE_APPLICATION_CREDENTIALS\" > /tmp/google-credentials.json"
+  "postStartCommand": "echo \"$GOOGLE_APPLICATION_CREDENTIALS\" > /workspace/conf/google-credentials.json"
 
 }
