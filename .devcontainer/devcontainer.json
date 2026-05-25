@@ -28,7 +28,8 @@
     "DB_URL": "jdbc:postgresql://db:5432/smart_billing_db",
     "DB_USERNAME": "developer",
     "DB_PASSWORD": "devjava2026",
-    "PORT": "8181"
+    "PORT": "8181",
+    "GOOGLE_APPLICATION_CREDENTIALS": "/tmp/google-credentials.json"
   },
 
   "forwardPorts": [8181, 5432],
