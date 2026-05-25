@@ -4,8 +4,6 @@
   "service": "app",
   "workspaceFolder": "/workspace",
   
-  "initializeCommand": "echo \"$GOOGLE_APPLICATION_CREDENTIALS\" > /tmp/google-credentials.json",
-
    "features": {
     "ghcr.io/devcontainers/features/git:1": {}
 
@@ -37,6 +35,8 @@
 
   "forwardPorts": [8181, 5432],
   
-  "postCreateCommand": "sudo apt update && apt install -y postgresql-client && mvn clean install -DskipTests"
+  "postCreateCommand": "sudo apt update && apt install -y postgresql-client && mvn clean install -DskipTests",
+
+  "postStartCommand": "echo \"$GOOGLE_APPLICATION_CREDENTIALS\" > /tmp/google-credentials.json"
 
 }
