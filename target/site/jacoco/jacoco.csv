@@ -4,8 +4,8 @@ GROUP,PACKAGE,CLASS,INSTRUCTION_MISSED,INSTRUCTION_COVERED,BRANCH_MISSED,BRANCH_
 ,com.smart.billing.app.dto,CustomerResponseDTO,0,30,0,0,0,1,0,1,0,1
 ,com.smart.billing.app.dto,ContractResponseDTO,0,36,0,0,0,1,0,1,0,1
 ,com.smart.billing.app.dto,ErrorResponse,0,12,0,0,0,1,0,1,0,1
-,com.smart.billing.app.dto,RegisterRequestDTO,0,21,0,0,0,1,0,1,0,1
 ,com.smart.billing.app.dto,ContractRequestDTO,0,21,0,0,0,1,0,1,0,1
+,com.smart.billing.app.dto,RegisterRequestDTO,0,21,0,0,0,1,0,1,0,1
 ,com.smart.billing.app.dto,AiDTO,3,0,0,0,1,0,1,0,1,0
 ,com.smart.billing.app.dto,AiDTO.CustomizedReminderResponse,0,12,0,0,0,1,0,1,0,1
 ,com.smart.billing.app.dto,InvoiceResponseDTO,0,30,0,0,0,1,0,1,0,1
